@@ -1,0 +1,13 @@
+POST http://localhost:3000/api/places HTTP/1.1
+content-type: application/json
+
+{
+    "name": "Decanato de la Facultad FEINRR", 
+    "hours": "De 9am a 12pm y de 3pm a 5pm", 
+    "uuid": "12345678-1234-5678-1234-56789abcdef0", 
+    "additionalInformation": "Oficina del decano de la facultad, Ing. Julio Romero"
+}
+
+###
+GET http://localhost:3000/api/notifications/place/12345678-1234-5678-1234-56789abcdef0 HTTP/1.1
+content-type: application/json

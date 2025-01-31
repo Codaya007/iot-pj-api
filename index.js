@@ -94,7 +94,7 @@ app.put('/api/places/:id', async (req, res) => {
 });
 
 // Buscar lugar por uuid
-app.put('/api/places/uuid/:uuid', async (req, res) => {
+app.get('/api/places/uuid/:uuid', async (req, res) => {
   const place = await Place.findOne({ uuid: req.params.uuid });
 
   res.json(place);

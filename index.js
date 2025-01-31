@@ -12,6 +12,7 @@ const notFound = require("./middlewares/notFound");
 
 const app = express();
 
+
 app.use(logger("dev"));
 
 // Conectar a MongoDB
@@ -37,13 +38,44 @@ app.post('/api/places', async (req, res) => {
 });
 
 // Obtener todos los lugares
+// Obtener todos los lugares
 app.get('/api/places', async (req, res) => {
-  const { skip = 0, limit = 10, ...where } = req.query;
+  const { skip = 0, limit = 10, search = '', ...where } = req.query;
 
-  const results = await Place.find(where).skip(skip).limit(limit);
-  const totalCount = await Place.countDocuments(where);
+  // Construir el objeto de búsqueda
+  const searchQuery = {
+    $or: [
+      { name: { $regex: search, $options: 'i' } }, // Búsqueda insensible a mayúsculas/minúsculas
+      { additionalInformation: { $regex: search, $options: 'i' } }
+    ]
+  };
 
-  res.json({ results, totalCount });
+  // Combinar los filtros adicionales con la búsqueda
+  const query = search ? { ...where, ...searchQuery } : where;
+
+  try {
+    // Obtener los resultados con paginación
+    const results = await Place.find(query)
+      .skip(Number(skip))
+      .limit(Number(limit));
+
+    // Contar el total de documentos que coinciden con la consulta
+    const totalCount = await Place.countDocuments(query);
+
+    // Calcular el número total de páginas
+    const totalPages = Math.ceil(totalCount / limit);
+
+    // Enviar la respuesta
+    res.json({
+      results,
+      totalCount,
+      totalPages,
+      currentPage: Math.floor(skip / limit) + 1
+    });
+  } catch (error) {
+    console.error('Error al obtener los lugares:', error);
+    res.status(500).json({ message: 'Error al obtener los lugares' });
+  }
 });
 
 app.get('/api/places/:id', async (req, res) => {
@@ -57,7 +89,15 @@ app.get('/api/places/:id', async (req, res) => {
 // Actualizar un lugar por id
 app.put('/api/places/:id', async (req, res) => {
   const updatedPlace = await Place.findByIdAndUpdate(req.params.id, req.body, { new: true });
+
   res.json(updatedPlace);
+});
+
+// Buscar lugar por uuid
+app.put('/api/places/uuid/:uuid', async (req, res) => {
+  const place = await Place.findOne({ uuid: req.params.uuid });
+
+  res.json(place);
 });
 
 // Eliminar un lugar por id
